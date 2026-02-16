@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply h-full overflow-hidden antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  #root {
+    @apply h-full w-full bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Utilities */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg;
+  }
+  
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-md border border-white/30 shadow-sm rounded-2xl;
+  }
+  
+  .glass-button {
+    @apply bg-white/20 backdrop-blur-md border border-white/30 shadow transition-all active:scale-[0.98];
+  }
+
+  /* Animated Mesh Gradient Background */
+  .radiant-background {
+    background-color: #f3f4f6;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(190,80%,70%,0.4) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(280,70%,75%,0.4) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(160,70%,70%,0.4) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(220,80%,75%,0.4) 0px, transparent 50%);
+    background-size: 150% 150%;
+    animation: gradient-move 15s ease infinite alternate;
+  }
+}
+
+@keyframes gradient-move {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+/* Scrollbar Hide */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
