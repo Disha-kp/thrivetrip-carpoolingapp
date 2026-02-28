@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Settings, CreditCard, Shield, ShieldCheck, LogOut, Wallet, X, CircleHelp, ChevronRight } from 'lucide-react';
+import { User, Settings, CreditCard, Shield, ShieldCheck, LogOut, Wallet, X, CircleHelp, ChevronRight, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -7,6 +7,16 @@ export default function Profile() {
     const { currentUser, logout, metroMiles } = useAuth();
     const navigate = useNavigate();
     const [showRedeemModal, setShowRedeemModal] = useState(false);
+    const [wakeWordEnabled, setWakeWordEnabled] = useState(localStorage.getItem('wakeWordEnabled') === 'true');
+
+    const handleWakeWordToggle = () => {
+        const newState = !wakeWordEnabled;
+        setWakeWordEnabled(newState);
+        localStorage.setItem('wakeWordEnabled', newState);
+        if (newState) {
+            alert("Voice Wake Word Enabled. Try saying 'Hey Thrive Trip' or 'Hey Drive Trip'. Please ensure microphone permissions are granted.");
+        }
+    };
 
     const handleLogout = async () => {
         try {
@@ -94,6 +104,7 @@ export default function Profile() {
             {/* Menu Options */}
             <div className="space-y-3 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
                 {[
+                    { label: 'Your Rides', icon: Car, path: '/your-rides' },
                     { label: 'Settings', icon: Settings, path: '/settings' },
                     { label: 'Payment Methods', icon: CreditCard, path: '/payment' },
                     { label: 'Safety & Privacy', icon: Shield, path: '/safety' },
@@ -114,6 +125,25 @@ export default function Profile() {
                         <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
                     </button>
                 ))}
+
+                {/* Accessibility Toggle */}
+                <div className="w-full glass-button p-4 rounded-xl flex items-center justify-between shadow-sm border border-white/60">
+                    <div className="flex items-center space-x-4">
+                        <div className="bg-yellow-100 p-2 rounded-lg text-yellow-600">
+                            <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" x2="12" y1="19" y2="22" /></svg>
+                        </div>
+                        <div className="text-left">
+                            <span className="block text-base font-semibold text-gray-700">Enable Voice Wake Word</span>
+                            <span className="block text-xs text-gray-400">Say "Hey Thrive Trip" to listen</span>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleWakeWordToggle}
+                        className={`w-12 h-6 rounded-full transition-colors relative ${wakeWordEnabled ? 'bg-teal-500' : 'bg-gray-300'}`}
+                    >
+                        <div className={`w-4 h-4 rounded-full bg-white absolute top-1 transition-transform ${wakeWordEnabled ? 'left-7' : 'left-1'}`}></div>
+                    </button>
+                </div>
 
                 <button
                     onClick={handleLogout}

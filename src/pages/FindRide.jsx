@@ -7,7 +7,6 @@ import RideCard from '../components/RideCard';
 import Map from '../components/Map';
 
 import SmartSpotGuide from '../components/SmartSpotGuide';
-import VoiceAssistant from '../components/VoiceAssistant'; // Import Voice Assistant
 
 export default function FindRide() {
     const { currentUser } = useAuth();
@@ -58,40 +57,43 @@ export default function FindRide() {
     };
 
     // Voice Assistant Logic
-    const handleVoiceCommand = (command, speak) => {
-        const lowerCommand = command.toLowerCase();
+    useEffect(() => {
+        const handleVoiceEvent = (e) => {
+            const { command, speak } = e.detail;
+            const lowerCommand = command.toLowerCase();
 
-        if (lowerCommand.includes('book') || lowerCommand.includes('yes')) {
-            // "Book" Command
-            if (filteredRides.length > 0) {
-                const firstRide = filteredRides[0];
-                handleBookRide(firstRide.id);
-                speak("Ride Booked Successfully. Driver notified.");
-            } else {
-                speak("No ride selected or available to book.");
-            }
-        } else {
-            // Destination Search Command
-            setSearchQuery(lowerCommand);
-            // Wait a bit for state/filter to update (simulated)
-            setTimeout(() => {
-                // accessing filteredRides directly here might be stale, but good enough for demo
-                // better to use a useEffect on searchQuery/filteredRides to trigger speech
-                const results = rides.filter(ride =>
-                    ride.origin?.toLowerCase().includes(lowerCommand) ||
-                    ride.destination?.toLowerCase().includes(lowerCommand)
-                );
-
-                if (results.length > 0) {
-                    const ride = results[0];
-                    speak(`Ride available with ${ride.driverName} for ${ride.price} rupees. Say 'Book' to confirm.`);
+            if (lowerCommand.includes('book') || lowerCommand.includes('yes')) {
+                // "Book" Command
+                if (filteredRides.length > 0) {
+                    const firstRide = filteredRides[0];
+                    handleBookRide(firstRide.id);
+                    speak("Ride Booked Successfully. Driver notified.");
                 } else {
-                    speak("Sorry, no rides found for that location.");
+                    speak("No ride selected or available to book.");
                 }
-            }, 500);
-        }
-    };
+            } else {
+                // Destination Search Command
+                setSearchQuery(lowerCommand);
+                // Wait a bit for state/filter to update (simulated)
+                setTimeout(() => {
+                    const results = rides.filter(ride =>
+                        ride.origin?.toLowerCase().includes(lowerCommand) ||
+                        ride.destination?.toLowerCase().includes(lowerCommand)
+                    );
 
+                    if (results.length > 0) {
+                        const ride = results[0];
+                        speak(`Ride available with ${ride.driverName} for ${ride.price} rupees. Say 'Book' to confirm.`);
+                    } else {
+                        speak("Sorry, no rides found for that location.");
+                    }
+                }, 500);
+            }
+        };
+
+        window.addEventListener('voice-command', handleVoiceEvent);
+        return () => window.removeEventListener('voice-command', handleVoiceEvent);
+    }, [rides, filteredRides]);
     return (
         <div className="h-[calc(100vh-64px)] flex flex-col pb-[80px] relative"> {/* Adjusted height to account for bottom nav */}
 
@@ -178,9 +180,6 @@ export default function FindRide() {
                             </div>
                         </div>
                     </div>
-
-                    {/* Voice Assistant Overlay */}
-                    <VoiceAssistant onCommand={handleVoiceCommand} />
                 </>
             ) : (
                 <div className="flex-1 flex flex-col">

@@ -5,11 +5,12 @@ export default function useVoiceAssistant() {
     const [transcript, setTranscript] = useState('');
     const [isSpeaking, setIsSpeaking] = useState(false);
     const recognitionRef = useRef(null);
+    const isSpeakingRef = useRef(false);
 
     useEffect(() => {
         if ('webkitSpeechRecognition' in window) {
             const recognition = new window.webkitSpeechRecognition();
-            recognition.continuous = false;
+            recognition.continuous = true;
             recognition.interimResults = false;
             recognition.lang = 'en-US';
 
@@ -19,17 +20,20 @@ export default function useVoiceAssistant() {
 
             recognition.onend = () => {
                 setIsListening(false);
+                if (!isSpeakingRef.current) {
+                    try { recognition.start(); } catch (e) { }
+                }
             };
 
             recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
+                if (isSpeakingRef.current) return;
+                const text = event.results[event.results.length - 1][0].transcript;
                 setTranscript(text);
             };
 
             recognition.onerror = (event) => {
                 console.error('Speech recognition error', event.error);
                 setIsListening(false);
-                speak("Sorry, I didn't verify that. Please try again.");
             };
 
             recognitionRef.current = recognition;
@@ -40,22 +44,50 @@ export default function useVoiceAssistant() {
 
     const speak = useCallback((text) => {
         if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
             setIsSpeaking(true);
+            isSpeakingRef.current = true;
+
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.onend = () => setIsSpeaking(false);
+            window.speechUtterance = utterance; // CRITICAL HACK
+
+            utterance.onend = () => {
+                setIsSpeaking(false);
+                isSpeakingRef.current = false;
+                try {
+                    if (recognitionRef.current) {
+                        recognitionRef.current.start();
+                    }
+                } catch (e) {
+                    console.log("Mic is already running or blocked:", e);
+                }
+            };
+
+            setTimeout(() => {
+                if (isSpeakingRef.current) {
+                    isSpeakingRef.current = false;
+                    setIsSpeaking(false);
+                    try {
+                        if (recognitionRef.current) {
+                            recognitionRef.current.start();
+                        }
+                    } catch (e) { }
+                }
+            }, 5000);
+
             window.speechSynthesis.speak(utterance);
         }
     }, []);
 
     const listen = useCallback(() => {
-        if (recognitionRef.current && !isListening) {
-            setTranscript(''); // Clear previous
-            recognitionRef.current.start();
+        if (recognitionRef.current) {
+            setTranscript('');
+            try { recognitionRef.current.start(); } catch (e) { }
         }
     }, [isListening]);
 
     const stopListening = useCallback(() => {
-        if (recognitionRef.current && isListening) {
+        if (recognitionRef.current) {
             recognitionRef.current.stop();
         }
     }, [isListening]);
@@ -67,6 +99,6 @@ export default function useVoiceAssistant() {
         speak,
         listen,
         stopListening,
-        setTranscript // Allow manual clearing if needed
+        setTranscript
     };
 }

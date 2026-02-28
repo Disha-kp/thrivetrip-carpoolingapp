@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useAccessibility } from '../context/AccessibilityContext';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { PlusCircle, MapPin, Calendar, Clock, DollarSign, Users } from 'lucide-react';
+import { PlusCircle, MapPin, Calendar, Clock, DollarSign, Users, Car, Bike } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const HUBS = [
@@ -13,6 +14,7 @@ const HUBS = [
 
 export default function OfferRide() {
     const { currentUser } = useAuth();
+    const { isHighContrast } = useAccessibility();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -21,11 +23,19 @@ export default function OfferRide() {
         date: '',
         time: '',
         price: '',
-        seats: 3
+        seats: 3,
+        vehicleType: 'Car',
+        vehicleModel: '',
+        numberPlate: '',
+        vehicleColor: ''
     });
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        let value = e.target.value;
+        if (e.target.name === 'numberPlate') {
+            value = value.toUpperCase();
+        }
+        setFormData({ ...formData, [e.target.name]: value });
     };
 
     const handleSubmit = async (e) => {
@@ -42,6 +52,10 @@ export default function OfferRide() {
                 time: formData.time, // Storing time separately for display
                 price: Number(formData.price),
                 seats: Number(formData.seats),
+                vehicleType: formData.vehicleType,
+                vehicleModel: formData.vehicleModel,
+                numberPlate: formData.numberPlate,
+                vehicleColor: formData.vehicleColor,
                 passengers: [],
                 createdAt: serverTimestamp()
             });
@@ -160,10 +174,91 @@ export default function OfferRide() {
                     </div>
                 </div>
 
+                {/* Vehicle Details Section */}
+                <div className="pt-4 border-t border-gray-200 mt-6 space-y-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">Vehicle Details</h3>
+
+                    {/* Type Toggle */}
+                    <div className="flex space-x-4 mb-4">
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, vehicleType: 'Car' })}
+                            className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center space-x-2 border transition-colors ${formData.vehicleType === 'Car' ? 'bg-[#008080] text-white border-[#008080]' : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                            <Car size={20} />
+                            <span>Car</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, vehicleType: 'Bike' })}
+                            className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center space-x-2 border transition-colors ${formData.vehicleType === 'Bike' ? 'bg-[#008080] text-white border-[#008080]' : 'bg-white text-gray-700 border-gray-300'}`}
+                        >
+                            <Bike size={20} />
+                            <span>Bike</span>
+                        </button>
+                    </div>
+
+                    <div className="flex space-x-4 items-start">
+                        {/* Inputs */}
+                        <div className="flex-1 space-y-4">
+                            {/* Model Input */}
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">Vehicle Model</label>
+                                <input
+                                    type="text"
+                                    name="vehicleModel"
+                                    required
+                                    placeholder="e.g., Swift, Activa, Nexon"
+                                    value={formData.vehicleModel}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-[#008080] focus:border-[#008080] outline-none"
+                                />
+                            </div>
+
+                            {/* Number Plate Input */}
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">Number Plate</label>
+                                <input
+                                    type="text"
+                                    name="numberPlate"
+                                    required
+                                    placeholder="e.g., TS 08 AB 1234"
+                                    value={formData.numberPlate}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-[#008080] focus:border-[#008080] outline-none uppercase"
+                                />
+                            </div>
+
+                            {/* Color Input */}
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">Vehicle Color</label>
+                                <input
+                                    type="text"
+                                    name="vehicleColor"
+                                    required
+                                    placeholder="e.g., Red, Matte Black, Silver"
+                                    value={formData.vehicleColor}
+                                    onChange={handleChange}
+                                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-[#008080] focus:border-[#008080] outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Visual Preview */}
+                        <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center mt-6 shadow-inner border border-gray-200 overflow-hidden">
+                            {formData.vehicleType === 'Car' ? (
+                                <Car size={48} color={formData.vehicleColor || 'currentColor'} strokeWidth={1.5} />
+                            ) : (
+                                <Bike size={48} color={formData.vehicleColor || 'currentColor'} strokeWidth={2} />
+                            )}
+                        </div>
+                    </div>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#008080] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-teal-700 transition-colors mt-4 disabled:opacity-50"
+                    className={`w-full font-bold py-4 rounded-xl shadow-lg transition-colors mt-4 disabled:opacity-50 ${isHighContrast ? 'bg-yellow-400 text-black border-4 border-yellow-400' : 'bg-[#008080] text-white hover:bg-teal-700'}`}
                 >
                     {loading ? 'Publishing...' : 'Post Ride'}
                 </button>
