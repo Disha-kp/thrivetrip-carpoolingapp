@@ -166,7 +166,7 @@ export default function OfferRide() {
                             name="seats"
                             required
                             min="1"
-                            max="6"
+                            max={formData.vehicleType === 'Bike' ? "1" : "6"}
                             value={formData.seats}
                             onChange={handleChange}
                             className="w-full p-3 border border-gray-300 rounded-xl focus:ring-[#008080] focus:border-[#008080] outline-none"
@@ -190,7 +190,7 @@ export default function OfferRide() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => setFormData({ ...formData, vehicleType: 'Bike' })}
+                            onClick={() => setFormData({ ...formData, vehicleType: 'Bike', seats: 1 })}
                             className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center space-x-2 border transition-colors ${formData.vehicleType === 'Bike' ? 'bg-[#008080] text-white border-[#008080]' : 'bg-white text-gray-700 border-gray-300'}`}
                         >
                             <Bike size={20} />

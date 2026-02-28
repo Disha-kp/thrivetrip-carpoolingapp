@@ -4,12 +4,14 @@ import { Mic, MicOff, Volume2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, increment, arrayUnion, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function VoiceAssistant({ onCommand }) {
     const { isListening, transcript, speak, listen, stopListening, isSpeaking } = useVoiceAssistant();
     const [isActive, setIsActive] = useState(false);
     const [isWakeWordListening, setIsWakeWordListening] = useState(false);
     const wakeWordRecRef = useRef(null);
+    const navigate = useNavigate();
 
     // Conversational State
     const [conversationStep, setConversationStep] = useState('idle');
@@ -76,9 +78,10 @@ export default function VoiceAssistant({ onCommand }) {
     // Wake Word listener initialization
     useEffect(() => {
         const wakeWordEnabled = localStorage.getItem('wakeWordEnabled') === 'true';
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-        if (wakeWordEnabled && 'webkitSpeechRecognition' in window && !isActive && !isListening) {
-            const wakeRec = new window.webkitSpeechRecognition();
+        if (wakeWordEnabled && SpeechRecognition && !isActive && !isListening) {
+            const wakeRec = new SpeechRecognition();
             wakeRec.continuous = true;
             wakeRec.interimResults = false;
             wakeRec.lang = 'en-US';
@@ -203,7 +206,10 @@ export default function VoiceAssistant({ onCommand }) {
                                 speak(aiText);
                             }
                             setConversationStep('idle');
-                            setTimeout(() => setIsActive(false), 3000);
+                            setTimeout(() => {
+                                setIsActive(false);
+                                if (success) navigate('/active-ride/' + selectedRideId);
+                            }, 3000);
                         });
                     } else if (['2', 'two', 'too', 'to'].some(word => userText.includes(word))) {
                         const aiText = "Booking cancelled.";
@@ -277,7 +283,7 @@ export default function VoiceAssistant({ onCommand }) {
                     if (['1', 'one'].some(word => userText.includes(word))) {
                         setPendingRide(prev => ({ ...prev, vehicleType: 'Car' }));
                     } else if (['2', 'two', 'too', 'to'].some(word => userText.includes(word))) {
-                        setPendingRide(prev => ({ ...prev, vehicleType: 'Bike' }));
+                        setPendingRide(prev => ({ ...prev, vehicleType: 'Bike', seats: 1 }));
                     } else {
                         setPendingRide(prev => ({ ...prev, vehicleType: 'Car' })); // Default fallback
                     }

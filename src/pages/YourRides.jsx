@@ -88,6 +88,21 @@ export default function YourRides() {
         }
     };
 
+    const handleCompleteRideDashboard = async (rideId) => {
+        if (!window.confirm("Complete this ride? This will end the trip for all passengers and initiate payment.")) return;
+        try {
+            const rideRef = doc(db, "rides", rideId);
+            await updateDoc(rideRef, {
+                status: 'completed' // Triggers passenger redirect
+            });
+            alert("Ride marked as completed.");
+            navigate('/payment/' + rideId); // Optional: driver sees payment or summary
+        } catch (error) {
+            console.error("Error completing ride:", error);
+            alert("Failed to complete ride.");
+        }
+    };
+
     const handleRiderCancelBooking = async (rideId) => {
         if (!window.confirm("Are you sure you want to cancel your booking?")) return;
         try {
@@ -219,16 +234,24 @@ export default function YourRides() {
                             {/* Actions */}
                             <div className="pt-2">
                                 {viewMode === 'driving' ? (
-                                    <button
-                                        onClick={() => handleCancelRide(ride.id)}
-                                        className="w-full py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl flex items-center justify-center transition-colors border border-red-100"
-                                    >
-                                        <ShieldAlert className="w-4 h-4 mr-2" /> Cancel Entire Ride
-                                    </button>
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={() => handleCompleteRideDashboard(ride.id)}
+                                            className="flex-1 py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl flex items-center justify-center shadow-lg transition-colors"
+                                        >
+                                            Complete Ride
+                                        </button>
+                                        <button
+                                            onClick={() => handleCancelRide(ride.id)}
+                                            className="py-3.5 px-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl flex items-center justify-center transition-colors border border-red-100"
+                                        >
+                                            <ShieldAlert className="w-5 h-5 text-red-600" />
+                                        </button>
+                                    </div>
                                 ) : (
                                     <div className="flex space-x-3">
                                         <button
-                                            onClick={() => navigate('/ride-active')}
+                                            onClick={() => navigate('/active-ride/' + ride.id)}
                                             className="flex-1 py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl flex items-center justify-center shadow-lg transition-colors"
                                         >
                                             <Navigation className="w-4 h-4 mr-2" /> Track Ride

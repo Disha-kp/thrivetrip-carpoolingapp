@@ -34,11 +34,11 @@ function App() {
               <Route index element={<FindRide />} />
               <Route path="offer" element={<OfferRide />} />
               <Route path="profile" element={<Profile />} />
-              <Route path="ride-active" element={<RideActive />} />
+              <Route path="active-ride/:rideId?" element={<RideActive />} />
               <Route path="onboarding" element={<Onboarding />} />
               <Route path="faq" element={<FAQ />} />
               <Route path="settings" element={<Settings />} />
-              <Route path="payment" element={<PaymentMethods />} />
+              <Route path="payment/:rideId?" element={<PaymentMethods />} />
               <Route path="safety" element={<Safety />} />
               <Route path="your-rides" element={<YourRides />} />
             </Route>

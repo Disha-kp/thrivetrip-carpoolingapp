@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { Shield, AlertTriangle, Phone, MapPin, Navigation, ChevronRight, CheckCircle, XCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, increment, arrayRemove } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import SmartSpotGuide from '../components/SmartSpotGuide';
-import PaymentModal from '../components/PaymentModal';
 
 export default function RideActive() {
     const navigate = useNavigate();
+    const { rideId } = useParams();
     const { currentUser } = useAuth();
     const [isDeviated, setIsDeviated] = useState(false);
     const [status, setStatus] = useState('active'); // active, completed
@@ -55,36 +55,72 @@ export default function RideActive() {
     // Listen to live ride data
     useEffect(() => {
         if (!currentUser) return;
-        const q = query(collection(db, "rides"), orderBy("createdAt", "desc"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const allRides = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-            // Find most recent ride user is involved in
-            const myRide = allRides.find(r =>
-                r.driverId === currentUser.uid ||
-                (r.passengers && r.passengers.includes(currentUser.uid))
-            );
+        let myRideRef;
+        let unsubscribe;
 
-            if (myRide) {
-                setActiveRide(myRide);
-                const userIsDriver = myRide.driverId === currentUser.uid;
-                setIsDriver(userIsDriver);
+        if (rideId) {
+            // Listen to specific ride
+            myRideRef = doc(db, "rides", rideId);
+            unsubscribe = onSnapshot(myRideRef, (docSnapshot) => {
+                if (docSnapshot.exists()) {
+                    const rideData = { id: docSnapshot.id, ...docSnapshot.data() };
+                    setActiveRide(rideData);
+                    
+                    const userIsDriver = rideData.driverId === currentUser.uid;
+                    setIsDriver(userIsDriver);
 
-                // Driver notification logic
-                if (userIsDriver) {
-                    const currentCount = myRide.passengers?.length || 0;
-                    if (currentCount < previousPassengerCountRef.current) {
-                        alert("Alert: A passenger has cancelled their booking.");
+                    // Auto-redirect passenger to payment if completed
+                    if (!userIsDriver && rideData.status === 'completed') {
+                        navigate('/payment/' + rideData.id);
                     }
-                    previousPassengerCountRef.current = currentCount;
-                }
-            } else {
-                setActiveRide(null);
-            }
-        });
 
-        return () => unsubscribe();
-    }, [currentUser]);
+                    // Driver notification logic
+                    if (userIsDriver) {
+                        const currentCount = rideData.passengers?.length || 0;
+                        if (currentCount < previousPassengerCountRef.current) {
+                            alert("Alert: A passenger has cancelled their booking.");
+                        }
+                        previousPassengerCountRef.current = currentCount;
+                    }
+                } else {
+                    setActiveRide(null);
+                }
+            });
+        } else {
+             // Fallback: Find most recent ride user is involved in
+             const q = query(collection(db, "rides"), orderBy("createdAt", "desc"));
+             unsubscribe = onSnapshot(q, (snapshot) => {
+                 const allRides = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                 const myRide = allRides.find(r =>
+                     r.driverId === currentUser.uid ||
+                     (r.passengers && r.passengers.includes(currentUser.uid))
+                 );
+ 
+                 if (myRide) {
+                     setActiveRide(myRide);
+                     const userIsDriver = myRide.driverId === currentUser.uid;
+                     setIsDriver(userIsDriver);
+ 
+                     if (!userIsDriver && myRide.status === 'completed') {
+                         navigate('/payment/' + myRide.id);
+                     }
+ 
+                     if (userIsDriver) {
+                         const currentCount = myRide.passengers?.length || 0;
+                         if (currentCount < previousPassengerCountRef.current) {
+                             alert("Alert: A passenger has cancelled their booking.");
+                         }
+                         previousPassengerCountRef.current = currentCount;
+                     }
+                 } else {
+                     setActiveRide(null);
+                 }
+             });
+        }
+
+        return () => { if (unsubscribe) unsubscribe(); }
+    }, [currentUser, rideId, navigate]);
 
     const handleCancelRide = async () => {
         if (!activeRide || isDriver) return;

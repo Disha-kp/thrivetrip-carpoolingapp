@@ -1,122 +1,160 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-    ArrowLeft,
-    Wallet,
-    CreditCard,
-    Plus,
-    Banknote,
-    Check,
-    Smartphone
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { db } from '../firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
+import { CheckCircle, Wallet, CreditCard, Banknote, ChevronRight } from 'lucide-react';
 
 export default function PaymentMethods() {
+    const { rideId } = useParams();
     const navigate = useNavigate();
-    const { metroMiles } = useAuth();
-    const [selectedMethod, setSelectedMethod] = useState('cash');
+    const { currentUser } = useAuth();
 
-    const handleSelect = (methodId) => {
-        setSelectedMethod(methodId);
+    const [ride, setRide] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [processing, setProcessing] = useState(false);
+    const [selectedMethod, setSelectedMethod] = useState(null);
+
+    useEffect(() => {
+        const fetchRide = async () => {
+            if (!rideId) {
+                setLoading(false);
+                return;
+            }
+            try {
+                const docRef = doc(db, 'rides', rideId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setRide({ id: docSnap.id, ...docSnap.data() });
+                }
+            } catch (error) {
+                console.error("Error fetching ride details:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRide();
+    }, [rideId]);
+
+    const handlePayment = async () => {
+        if (!selectedMethod) {
+            alert("Please select a payment method.");
+            return;
+        }
+        setProcessing(true);
+        // Simulate payment processing delay
+        setTimeout(async () => {
+            try {
+                if (rideId && currentUser) {
+                    // In a real app, update payment status here.
+                    // For now, we just mark it done for the UI flow and return home.
+                    alert(`Payment of ₹${ride?.price || 0} via ${selectedMethod} successful!`);
+                }
+                navigate('/');
+            } catch (error) {
+                console.error("Payment error:", error);
+                alert("Payment failed. Please try again.");
+            } finally {
+                setProcessing(false);
+            }
+        }, 1500);
     };
 
-    const PaymentOption = ({ id, icon: Icon, title, subtitle, isSelected, onClick }) => (
-        <button
-            onClick={() => onClick(id)}
-            className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ${isSelected ? 'border-[#008080] bg-teal-50' : 'border-gray-100 bg-white hover:border-gray-200'}`}
-        >
-            <div className="flex items-center">
-                <div className={`p-3 rounded-full mr-4 ${isSelected ? 'bg-[#008080] text-white' : 'bg-gray-100 text-gray-500'}`}>
-                    <Icon className="w-6 h-6" />
-                </div>
-                <div className="text-left">
-                    <h3 className={`font-bold ${isSelected ? 'text-[#008080]' : 'text-gray-900'}`}>{title}</h3>
-                    {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
-                </div>
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
-            {isSelected && (
-                <div className="bg-[#008080] rounded-full p-1">
-                    <Check className="w-4 h-4 text-white" />
-                </div>
-            )}
-        </button>
-    );
+        );
+    }
+
+    // Default fare if accessed without a specific ride context
+    const fare = ride?.price || 0;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24">
-            {/* Header */}
-            <div className="bg-white px-4 py-4 sticky top-0 z-10 shadow-sm flex items-center mb-6">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="p-2 rounded-full hover:bg-gray-100 transition"
-                >
-                    <ArrowLeft className="w-6 h-6 text-gray-700" />
-                </button>
-                <h1 className="text-xl font-bold text-gray-900 ml-2">Payment Methods</h1>
+        <div className="min-h-screen bg-gray-50 p-6 flex flex-col pt-12">
+            <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-4">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+                    <CheckCircle className="w-10 h-10 text-green-500" />
+                </div>
+                <h1 className="text-3xl font-black text-gray-900 mb-2">Ride Completed!</h1>
+                <p className="text-gray-500">How would you like to pay?</p>
             </div>
 
-            <div className="px-4 space-y-6">
+            <div className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 mb-8 animate-in fade-in slide-in-from-bottom-4 delay-100">
+                <p className="text-center text-gray-500 text-sm font-bold uppercase tracking-wider mb-2">Total Fare</p>
+                <p className="text-center text-5xl font-black text-teal-600 mb-6">₹{fare}</p>
 
-                {/* MetroMiles Wallet */}
-                <div className="bg-gradient-to-r from-[#008080] to-teal-600 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                    <div className="relative z-10">
-                        <div className="flex items-center space-x-2 mb-2">
-                            <Wallet className="w-5 h-5 text-teal-200" />
-                            <span className="text-sm font-medium text-teal-100 uppercase tracking-wider">MetroMiles Balance</span>
+                <div className="space-y-4">
+                    <button
+                        onClick={() => setSelectedMethod('UPI')}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${selectedMethod === 'UPI' ? 'border-teal-500 bg-teal-50' : 'border-gray-100 hover:border-teal-200'}`}
+                    >
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                <CreditCard className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                                <p className="font-bold text-gray-900">UPI / QR Code</p>
+                                <p className="text-xs text-gray-500">Google Pay, PhonePe, Paytm</p>
+                            </div>
                         </div>
-                        <h2 className="text-4xl font-bold mb-4">{metroMiles} <span className="text-lg font-normal opacity-80">Miles</span></h2>
-                        <button className="bg-white/20 hover:bg-white/30 text-white text-sm font-bold py-2 px-4 rounded-lg transition border border-white/30">
-                            + Add Money
-                        </button>
-                    </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'UPI' ? 'border-teal-500 bg-teal-500' : 'border-gray-300'}`}>
+                            {selectedMethod === 'UPI' && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setSelectedMethod('Cash')}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${selectedMethod === 'Cash' ? 'border-teal-500 bg-teal-50' : 'border-gray-100 hover:border-teal-200'}`}
+                    >
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                <Banknote className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                                <p className="font-bold text-gray-900">Cash</p>
+                                <p className="text-xs text-gray-500">Pay driver directly</p>
+                            </div>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'Cash' ? 'border-teal-500 bg-teal-500' : 'border-gray-300'}`}>
+                            {selectedMethod === 'Cash' && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setSelectedMethod('MetroMiles')}
+                        className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${selectedMethod === 'MetroMiles' ? 'border-teal-500 bg-teal-50' : 'border-gray-100 hover:border-teal-200'}`}
+                    >
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                <Wallet className="w-6 h-6" />
+                            </div>
+                            <div className="text-left">
+                                <p className="font-bold text-gray-900">MetroMiles Balance</p>
+                                <p className="text-xs text-gray-500">Available: ₹540</p>
+                            </div>
+                        </div>
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'MetroMiles' ? 'border-teal-500 bg-teal-500' : 'border-gray-300'}`}>
+                            {selectedMethod === 'MetroMiles' && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
+                        </div>
+                    </button>
                 </div>
-
-                {/* Section Title */}
-                <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2">Select Payment Mode</h2>
-
-                <div className="space-y-3">
-                    {/* UPI */}
-                    <PaymentOption
-                        id="upi"
-                        icon={Smartphone}
-                        title="UPI"
-                        subtitle="Google Pay, PhonePe, Paytm"
-                        isSelected={selectedMethod === 'upi'}
-                        onClick={handleSelect}
-                    />
-
-                    {/* Cards */}
-                    <PaymentOption
-                        id="card"
-                        icon={CreditCard}
-                        title="Credit / Debit Card"
-                        subtitle="Visa, Mastercard, RuPay"
-                        isSelected={selectedMethod === 'card'}
-                        onClick={handleSelect}
-                    />
-
-                    {/* Cash */}
-                    <PaymentOption
-                        id="cash"
-                        icon={Banknote}
-                        title="Cash"
-                        subtitle="Pay directly to the driver"
-                        isSelected={selectedMethod === 'cash'}
-                        onClick={handleSelect}
-                    />
-                </div>
-
-                {/* Add New Method */}
-                <button className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-medium hover:border-[#008080] hover:text-[#008080] transition">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add New Card or UPI ID
-                </button>
-
-                <p className="text-center text-xs text-gray-400 pt-4">
-                    Your payment information is encrypted and secure.
-                </p>
             </div>
+
+            <button
+                onClick={handlePayment}
+                disabled={!selectedMethod || processing}
+                className="w-full mt-auto mb-8 py-5 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-black text-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center justify-center"
+            >
+                {processing ? (
+                    <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                    <>
+                        Confirm Payment <ChevronRight className="w-6 h-6 ml-2" />
+                    </>
+                )}
+            </button>
         </div>
     );
 }

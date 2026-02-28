@@ -14,7 +14,7 @@ export default function Profile() {
         setWakeWordEnabled(newState);
         localStorage.setItem('wakeWordEnabled', newState);
         if (newState) {
-            alert("Voice Wake Word Enabled. Try saying 'Hey Thrive Trip' or 'Hey Drive Trip'. Please ensure microphone permissions are granted.");
+            alert("Voice Wake Word Enabled. Try saying 'Hey Car' or 'Okay Car'. Please ensure microphone permissions are granted.");
         }
     };
 
@@ -134,7 +134,7 @@ export default function Profile() {
                         </div>
                         <div className="text-left">
                             <span className="block text-base font-semibold text-gray-700">Enable Voice Wake Word</span>
-                            <span className="block text-xs text-gray-400">Say "Hey Thrive Trip" to listen</span>
+                            <span className="block text-xs text-gray-400">Say "Hey Car" to listen</span>
                         </div>
                     </div>
                     <button
