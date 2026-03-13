@@ -1,6 +1,6 @@
 # Thrivetrip - Modern Carpooling Platform
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=flat&logo=react&logoColor=%2361DAFB)
 ![Tailwind CSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)
 ![Firebase](https://img.shields.io/badge/firebase-%23039BE5.svg?style=flat&logo=firebase)
