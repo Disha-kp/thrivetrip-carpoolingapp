@@ -68,12 +68,18 @@ export default function VoiceAssistant({ onCommand }) {
 
     // Global Double-Tap Listener
     useEffect(() => {
-        const handleDoubleTap = () => {
-            handleStart();
-        };
-        window.addEventListener('dblclick', handleDoubleTap);
-        return () => window.removeEventListener('dblclick', handleDoubleTap);
-    }, [isActive]);
+    const handleDoubleTap = () => {
+        if (isActive) return;
+        if (navigator.vibrate) navigator.vibrate([200]);
+        setIsActive(true);
+        setConversationStep('main_menu');
+        const welcomeText = "Hello! I am your Thrivetrip Car Assistant. Say 1 to Book a ride. Say 2 to Create a ride.";
+        window.speechSynthesis.cancel();
+        speak(welcomeText);
+    };
+    window.addEventListener('dblclick', handleDoubleTap);
+    return () => window.removeEventListener('dblclick', handleDoubleTap);
+}, [isActive, speak]);
 
     // Wake Word listener initialization
     useEffect(() => {
