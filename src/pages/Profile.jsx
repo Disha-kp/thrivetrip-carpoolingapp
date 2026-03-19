@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { User, Settings, CreditCard, Shield, ShieldCheck, LogOut, Wallet, X, CircleHelp, ChevronRight, Car } from 'lucide-react';
+import { User, Settings, CreditCard, Shield, LogOut, Wallet, X, CircleHelp, ChevronRight, Car } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
