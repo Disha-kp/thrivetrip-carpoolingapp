@@ -76,8 +76,9 @@ export default function Login() {
             // Reset recaptcha
             if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.render().then(widgetId => {
+                   if(typeof grecaptcha !== 'undefined'){
                     grecaptcha.reset(widgetId);
-                });
+                   }});
             }
         } finally {
             setLoading(false);
