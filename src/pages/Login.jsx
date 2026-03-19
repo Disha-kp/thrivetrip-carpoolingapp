@@ -6,12 +6,7 @@ import { RecaptchaVerifier } from 'firebase/auth';
 import { auth } from '../firebase';
 
 export default function Login() {
-    const { loginWithPhone } = useAuth(); // Assuming checkCreateUser is exposed or handled within loginWithPhone flow? 
-    // Wait, checkCreateUser is internal to AuthContext usually, but for phone auth, the confirmationResult.confirm() returns the user.
-    // I need to make sure AuthContext handles the user creation after confirmation. 
-    // Actually, I can't call checkCreateUser from here easily if it's not exposed. 
-    // Let's rely on onAuthStateChanged in AuthContext to trigger checkCreateUser? 
-    // No, onAuthStateChanged triggers checkCreateUser in my implementation.
+    const { loginWithPhone } = useAuth();
 
     const navigate = useNavigate();
     const [phoneNumber, setPhoneNumber] = useState('+91');
@@ -23,9 +18,7 @@ export default function Login() {
 
     const checkProfileStatus = async (uid) => {
         try {
-            const { doc, getDoc } = await import('firebase/firestore'); // Dynamic import to avoid top-level if needed, or better just import at top. 
-            // Actually, let's use the standard import since we already have 'auth' imported from ../firebase
-            // But Login.jsx doesn't import db. Let's add it.
+            const { doc, getDoc } = await import('firebase/firestore');
             const { db } = await import('../firebase');
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
@@ -44,12 +37,8 @@ export default function Login() {
         if (!window.recaptchaVerifier) {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 'size': 'invisible',
-                'callback': (response) => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
-                },
-                'expired-callback': () => {
-                    // Response expired. Ask user to solve reCAPTCHA again.
-                }
+                'callback': (response) => {},
+                'expired-callback': () => {}
             });
         }
     }, []);
@@ -73,12 +62,12 @@ export default function Login() {
         } catch (err) {
             console.error(err);
             setError('Failed to send OTP. Try again.');
-            // Reset recaptcha
             if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.render().then(widgetId => {
-                   if(typeof grecaptcha !== 'undefined'){
-                    grecaptcha.reset(widgetId);
-                   }});
+                    if (typeof grecaptcha !== 'undefined') {
+                        grecaptcha.reset(widgetId);
+                    }
+                });
             }
         } finally {
             setLoading(false);
@@ -92,9 +81,6 @@ export default function Login() {
 
         try {
             const result = await window.confirmationResult.confirm(otp);
-            // User signed in. AuthContext onAuthStateChanged will handle the rest (creating user doc)
-
-            // Check if profile is complete
             const isProfileComplete = await checkProfileStatus(result.user.uid);
             if (isProfileComplete) {
                 navigate('/');
