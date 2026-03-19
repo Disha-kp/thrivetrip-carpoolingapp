@@ -12,8 +12,6 @@ const firebaseConfig = {
     appId: "1:868831934470:web:c1f8f94566467ce2a62b87",
     measurementId: "G-E02671EEVK"
 };
-console.log("CHECKING KEY:", firebaseConfig.apiKey);
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
 // 2. These exports make Auth and Database available to the rest of your app
