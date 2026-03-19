@@ -6,7 +6,7 @@ import { RecaptchaVerifier } from 'firebase/auth';
 import { auth } from '../firebase';
 
 export default function Login() {
-    const { loginWithPhone, checkCreateUser } = useAuth(); // Assuming checkCreateUser is exposed or handled within loginWithPhone flow? 
+    const { loginWithPhone } = useAuth(); // Assuming checkCreateUser is exposed or handled within loginWithPhone flow? 
     // Wait, checkCreateUser is internal to AuthContext usually, but for phone auth, the confirmationResult.confirm() returns the user.
     // I need to make sure AuthContext handles the user creation after confirmation. 
     // Actually, I can't call checkCreateUser from here easily if it's not exposed. 
