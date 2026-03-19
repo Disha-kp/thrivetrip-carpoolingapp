@@ -80,14 +80,14 @@ export default function useVoiceAssistant() {
         }
     }, []);
 
-    const listen = useCallback(() => {
+    const listen = useCallback(() => { ... }, []); {
         if (recognitionRef.current) {
             setTranscript('');
             try { recognitionRef.current.start(); } catch (e) { }
         }
     }, [isListening]);
 
-    const stopListening = useCallback(() => {
+    const stopListening = useCallback(() => { ... }, []);{
         if (recognitionRef.current) {
             recognitionRef.current.stop();
         }
