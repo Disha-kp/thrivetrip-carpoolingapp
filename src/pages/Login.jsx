@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Phone, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
+import { Phone, ArrowRight, Loader2 } from 'lucide-react';
 import { RecaptchaVerifier } from 'firebase/auth';
 import { auth } from '../firebase';
 
